@@ -1,0 +1,27 @@
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <services>
+      <service id="test_plugin.subscriber.templates" class="TestPlugin\Subscriber\Frontend">
+            <argument>%test_plugin.plugin_dir%</argument>
+            <argument type="service" id="service_container"/>
+            <tag name="shopware.event_subscriber"/>
+
+        </service>
+
+     <service id="test_plugin.subscriber.templatess" class="TestPlugin\Subscriber\Backend">
+            <argument>%test_plugin.plugin_dir%</argument>
+             <tag name="shopware.event_subscriber"/>
+        </service>
+
+            <service id="test_plugin.test_service" class="TestPlugin\Components\Api\Resource\TestService" >
+        <argument type="service" id="service_container"/>
+    </service>
+
+        <service id="shopware.api.bundle" class="TestPlugin\Components\Api\Resource\Bundle"/>
+
+
+
+    </services>
+</container>
