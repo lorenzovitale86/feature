@@ -7,6 +7,8 @@ use Enlight_Controller_ActionEventArgs;
 use Shopware\Components\DependencyInjection\Container;
 use TestPlugin\Components\Api\Resource\Bundle;
 use Shopware\Components\Plugin\DBALConfigReader;
+use TestPlugin\Models\Team;
+use TestPlugin\Models\Player;
 
 class Frontend implements SubscriberInterface
 {
@@ -35,10 +37,12 @@ class Frontend implements SubscriberInterface
      */
     protected $resource;
 
+    protected $teamRepository;
+    protected  $playerRepository;
     /**
      * @param $pluginDirectory
      * @param Container $container
-    */
+     */
     public function __construct($pluginDirectory, Container $container)
     {
         $this->pluginDirectory = $pluginDirectory;
@@ -46,8 +50,13 @@ class Frontend implements SubscriberInterface
         $this->userData = Shopware()->Modules()->Admin()->sGetUserData();
         $this->resource = $this->getBundleAPI();
         $this->container->get('template')->addTemplateDir(
-        $this->pluginDirectory . '/Resources/views/'
+            $this->pluginDirectory . '/Resources/views/'
         );
+        /** @var \Shopware\Components\Model\ModelManager $shopwareModel */
+        $shopwareModel=Shopware()->Models();
+        $this->teamRepository = $shopwareModel->getRepository(Team::class);
+        $this->playerRepository = $shopwareModel->getRepository(Player::class);
+
     }
 
     /** Returns an instance of the bundle API... */
@@ -65,11 +74,11 @@ class Frontend implements SubscriberInterface
     public static function getSubscribedEvents()
     {
         return [
-      'Enlight_Controller_Action_PostDispatchSecure_Frontend' => 'onPostDispatchFrontend',
-      'Enlight_Controller_Action_PreDispatch_Frontend_Account'=> 'onPreDispatchAccount',
-      'Enlight_Controller_Action_PostDispatchSecure_Widgets' => 'addLabelWidgets',
-    //  'Theme_Compiler_Collect_Plugin_Javascript' => 'addJsFiles'
-      ];
+            'Enlight_Controller_Action_PostDispatchSecure_Frontend' => 'onPostDispatchFrontend',
+            'Enlight_Controller_Action_PreDispatch_Frontend_Account'=> 'onPreDispatchAccount',
+            'Enlight_Controller_Action_PostDispatchSecure_Widgets' => 'addLabelWidgets',
+            //  'Theme_Compiler_Collect_Plugin_Javascript' => 'addJsFiles'
+        ];
     }
 
 
@@ -98,12 +107,29 @@ class Frontend implements SubscriberInterface
             $par = $controller->Request()->get('msg');
             $controller->forward('index', 'preference',null,array("msg"=>$par));
         }
-        if ($action=='profile') {
+
+        if ($action == 'index') {
+            if ($this->userData['additional']['user']['team']>0) {
+                $par = $this->userData['additional']['user']['team'];
+                $userTeam  =  $this->teamRepository->find($par);
+                $view->assign('userTeamName', $userTeam->getName());
+            }
+
+            if ($this->userData['additional']['user']['player']>0) {
+                $par = $this->userData['additional']['user']['player'];
+
+                $userPlayer  =  $this->playerRepository->find($par);
+                $view->assign('userPlayerName', $userPlayer->getName(). " " .$userPlayer->getSurname());
+            }
+
+        }
+        if ($action == 'profile') {
             $teams = $this->resource->getList(0,null,null,null);
             $view->assign('teams',$teams['data']);
             $par = null;
             if ($this->userData['additional']['user']['team']>0) {
                 $par = $this->userData['additional']['user']['team'];
+
             }
             $players = $this->resource->getListPlayersTeam($par,0,null,null,null);
             $view->assign('players',$players['data']);
