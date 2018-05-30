@@ -120,6 +120,8 @@ class Frontend implements SubscriberInterface
     {
         $controller = $args->getSubject();
         $view = $controller->View();
+        $userCustomerGroupKey = $this->userData['additional']['user']['customergroup'];
+        $view->assign('groupCustomer',$userCustomerGroupKey);
         $view->assign('testUserData', $this->userData);
     }
 
