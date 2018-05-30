@@ -10,15 +10,21 @@ class Backend implements SubscriberInterface
     /**
      * @var string
      */
-    private $pluginDirectory;
+    protected $pluginDirectory;
+
+    /**
+     * @var string
+     */
+    protected $container;
 
     /**
      * @param $pluginDirectory
+     * @param Container $container
      */
-    public function __construct($pluginDirectory)
+    public function __construct($pluginDirectory, Container $container)
     {
         $this->pluginDirectory = $pluginDirectory;
-
+        $this->container = $container;
     }
 
     /**
@@ -46,8 +52,8 @@ class Backend implements SubscriberInterface
             $view->extendsTemplate('backend/test/app.js');
         }
 */
-        if ($request->getActionName() == 'load') {
+       /* if ($request->getActionName() == 'load') {
             $view->extendsTemplate('backend/test/view/detail/window.js');
-        }
+        }*/
     }
 }

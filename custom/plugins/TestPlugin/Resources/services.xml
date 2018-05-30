@@ -10,11 +10,12 @@
 
         </service>
 
-     <service id="test_plugin.subscriber.templatess" class="TestPlugin\Subscriber\Backend">
+  <!-- <service id="test_plugin.subscriber.templatess" class="TestPlugin\Subscriber\Backend">
             <argument>%test_plugin.plugin_dir%</argument>
+       <argument type="service" id="service_container"/>
              <tag name="shopware.event_subscriber"/>
         </service>
-
+-->
             <service id="test_plugin.test_service" class="TestPlugin\Components\Api\Resource\TestService" >
         <argument type="service" id="service_container"/>
     </service>
