@@ -68,7 +68,7 @@ class Frontend implements SubscriberInterface
       'Enlight_Controller_Action_PostDispatchSecure_Frontend' => 'onPostDispatchFrontend',
       'Enlight_Controller_Action_PreDispatch_Frontend_Account'=> 'onPreDispatchAccount',
       'Enlight_Controller_Action_PostDispatchSecure_Widgets' => 'addLabelWidgets',
-      'Theme_Compiler_Collect_Plugin_Javascript' => 'addJsFiles'
+    //  'Theme_Compiler_Collect_Plugin_Javascript' => 'addJsFiles'
       ];
     }
 
