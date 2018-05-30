@@ -11,6 +11,9 @@ use Shopware\Components\Plugin\Context\UninstallContext;
 use Shopware\Components\Plugin\Context\UpdateContext;
 use Shopware\Bundle\AttributeBundle\Service\TypeMapping;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use TestPlugin\Models\Player;
+use TestPlugin\Models\Team;
+
 
 class TestPlugin extends Plugin
 {
@@ -21,37 +24,31 @@ class TestPlugin extends Plugin
     {
         /** @var CrudService $attributeCrudService */
       $attributeCrudService = $this->container->get('shopware_attribute.crud_service');
-      $attributeCrudService->update('s_user_attributes','team',TypeMapping::TYPE_COMBOBOX,[
+      $attributeCrudService->update('s_user_attributes','team',TypeMapping::TYPE_SINGLE_SELECTION,[
           'label'=>'Team',
           'supporText'=>'Favorite Team',
           'helpText'=>'Insert Your Favorite Team',
           'displayInBackend'=>true,
-          'entity'=>'Shopware\custom\plugins\TestPlugin\Models\Team',
+          'entity'=>Team::class,
           'position'=>99,
-          'custom'=>true,
-              'arrayStore' => [
 
-              ]
       ]);
 
-      $attributeCrudService->update('s_user_attributes','player',TypeMapping::TYPE_COMBOBOX,[
+      $attributeCrudService->update('s_user_attributes','player',TypeMapping::TYPE_SINGLE_SELECTION,[
           'label'=>'Player',
           'supporText'=>'Favorite Player',
           'helpText'=>'Insert Your Favorite Player',
           'displayInBackend'=>true,
-          'entity'=>'Shopware\custom\plugins\TestPlugin\Models\Player',
+          'entity'=>Player::class,
           'position'=>100,
-          'custom'=>true,
-          'arrayStore' => [
 
-          ],
       ]);
         $attributeCrudService->update('s_articles_attributes','team',TypeMapping::TYPE_COMBOBOX,[
             'label'=>'Team',
             'supporText'=>'Favorite Team',
             'helpText'=>'Insert Favorite Team',
             'displayInBackend'=>true,
-            'entity'=>'Shopware\custom\plugins\TestPlugin\Models\Team',
+            'entity'=>Team::class,
             'position'=>100,
             'custom'=>true,
             'arrayStore' => [
