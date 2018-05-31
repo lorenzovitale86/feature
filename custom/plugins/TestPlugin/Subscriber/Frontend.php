@@ -38,7 +38,8 @@ class Frontend implements SubscriberInterface
     protected $resource;
 
     protected $teamRepository;
-    protected  $playerRepository;
+    protected $playerRepository;
+
     /**
      * @param $pluginDirectory
      * @param Container $container
@@ -89,16 +90,17 @@ class Frontend implements SubscriberInterface
         $view->assign('testUserData', $this->userData);
     }
 
-
     public function onPreDispatchAccount(\Enlight_Controller_ActionEventArgs $args)
     {
         $controller = $args->getSubject();
         $action = $controller->Request()->getActionName();
         $view = $controller->View();
+        $groupDataEntry = $this->getPluginConfig("groupCustomer");
+
         $userCustomerGroupKey = $this->userData['additional']['user']['customergroup'];
         $view->assign('groupCustomer',$userCustomerGroupKey);
         if ($action=='preferences') {
-            if ($userCustomerGroupKey != 'DE') {
+            if ($userCustomerGroupKey != $groupDataEntry) {
                 try {
                     $controller->redirect(['controller' => 'index']);
                 } catch (\Exception $e) {
@@ -139,6 +141,20 @@ class Frontend implements SubscriberInterface
                 $view->assign('msg', $msg);
             }
         }
+
+        /** CHECK IF A GIFT GADGET IS PRESENT */
+
+        $basket = $this->basket->sGetBasket();
+        $gadgetInCart=false;
+        foreach ($basket['content'] as $content) {
+
+            if ($content['additional_details']['is_gadget']) {
+                $gadgetInCart = true;
+                return;
+            }
+
+        }
+
         $view->assign('testUserData', $this->userData);
     }
 
