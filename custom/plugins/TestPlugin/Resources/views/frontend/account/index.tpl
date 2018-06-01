@@ -13,7 +13,6 @@
                 {$sUserData.additional.user.birthday|date:'dd.MM.y'}<br />
             {/if}
             {$sUserData.additional.user.email|escapeHtml}
-
             {if $sUserData.additional.user.team}
                 <br />
               {s name="favorite_team"}{/s} {ucwords($userTeamName)}
@@ -22,6 +21,7 @@
                 <br />
               {s name="favorite_player"}{/s} {ucwords($userPlayerName)}
             {/if}
+
         </p>
     </div>
 {/block}

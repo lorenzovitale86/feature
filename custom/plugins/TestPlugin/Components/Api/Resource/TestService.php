@@ -53,4 +53,11 @@ class TestService
         $conn = $connection->executeUpdate('UPDATE s_user_attributes SET team=?,player=? WHERE userID=?',array($team,$player,$id));
         return $conn;
     }
+
+    public function updateOrderBasket($id, $sessionID)
+    {
+        $connection = $this->container->get('dbal_connection');
+        $conn = $connection->executeUpdate('UPDATE s_order_basket SET quantity = ?, price = ?, netprice = ?  WHERE articleID = ? AND sessionID = ?',array(1,0,0,$id,$sessionID));
+        return $conn;
+    }
 }

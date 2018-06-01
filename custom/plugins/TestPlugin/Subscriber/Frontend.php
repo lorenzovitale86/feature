@@ -104,16 +104,25 @@ class Frontend implements SubscriberInterface
 
         $article = $this->articleRepository->findById($idArticle);
         $isGadget = $article[0]->getAttribute()->getIsGadget();
+        $articleNumber = $article[0]->getDetails()[0]->getNumber();
 
         if ($isGadget) {
-            try {
-                    $controller->redirect([
-                    'controller' => 'index',
-                    'action'    => 'index',
-                    ]);
-                } catch (Exception $e) {
+            $basket = $this->basket->sGetBasket();
+            $gadgetInCart=false;
+           foreach ($basket['content'] as $content) {
+               if ($articleNumber == $content['ordernumber']) {
+                    $gadgetInCart = true;
+                    break;
+               }
+           }
+           if (!$gadgetInCart) {
+               try {
+                   $controller->redirect(['controller' => 'index']);
+               } catch (Exception $e) {
 
-            };
+               };
+
+           }
         }
 
     }
@@ -141,27 +150,35 @@ class Frontend implements SubscriberInterface
 
                 /* Search in the categories of the articles if there is Gadgets            */
                 //    $articleGadget =  $this->categoryRepository->findByName("Gadgets");
-
                 $articleGadgetNumber = $det[0]->getArticle()->getAttribute()->getGadget();
 
                 /** @var  $gadgetOrderNumber  the ordernumber of the first gadget article*/
                 // $gadgetOrderNumber = $articleGadget[0]->getArticles()[0]->getDetails()[0]->getNumber();
                 $basket = $this->basket->sGetBasket();
                 $gadgetInCart=false;
+                $gadgetIdInBakset = 0;
                 foreach ($basket['content'] as $content) {
                     if ($articleGadgetNumber == $content['ordernumber']) {
                         $gadgetInCart = true;
-                        return;
+                        break;
                     }
                 }
                 if (!$gadgetInCart) {
-                    $this->basket->sAddArticle($articleGadgetNumber, 1);
-                    $this->basket->sRefreshBasket();
+
+                    //$this->basket->sAddArticle($articleGadgetNumber, 1);
+                    $gadgetArticle = $this->articleDetailRepository->findByNumber($articleGadgetNumber)[0]->getArticle();
+                    $gadgetName = $gadgetArticle->getAttribute()->getArticle()->getName();
+                    $gadgetIdInBakset = $gadgetArticle->getAttribute()->getArticleID();
+
+                    $connection = $this->container->get('dbal_connection');
+                    $conn = $connection->executeQuery('INSERT INTO s_order_basket(id,sessionID,userID,articlename,articleID,ordernumber,shippingfree,quantity,price,netprice,datum)VALUES(?,?,?,?,?,?,?,?,?,?,?)',array(
+                    '',Shopware()->Session()->get("sessionId"),$this->userData['additional']['user']['id'],$gadgetName,
+                    $gadgetIdInBakset,$articleGadgetNumber,0,1,0,0,date("Y-m-d H:i:s")));
+               //    $this->basket->sRefreshBasket();
                 }
 
             }
         }
-
     }
 
     public function beforeDeleteArticle(\Enlight_Hook_HookArgs $args)

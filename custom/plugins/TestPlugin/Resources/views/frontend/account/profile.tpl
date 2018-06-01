@@ -6,9 +6,11 @@
 
 {$smarty.block.parent}
 
+
     <form name="preferenceForm" id="preferenceForm" action="{url controller=test action=savePreference}" method="post">
         <div class="panel has--border is--rounded">
             <div class="panel--title is--underline">{s name="preferences"}{/s}</div>
+    {if $gadgetInCart}
             <div class="panel--body is--wide">
         <div class="profile--salutation field--select select-field">
             <select name="profile[team]" data-quantity-error="true"
@@ -42,8 +44,12 @@
                 </button>
                 <span id="msg"></span>
             </div>
+    {else}
+        <p>{s name="alert_gadget_in_cart"}{/s}</p>
+    {/if}
     </div>
     </form>
+
 {/block}
 {block name="frontend_index_javascript_async_ready"}
     {$smarty.block.parent}
