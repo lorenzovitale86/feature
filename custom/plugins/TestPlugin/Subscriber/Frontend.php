@@ -95,10 +95,12 @@ class Frontend implements SubscriberInterface
         $controller = $args->getSubject();
         $action = $controller->Request()->getActionName();
         $view = $controller->View();
+        $groupDataEntry = $this->getPluginConfig("groupCustomer");
+        
         $userCustomerGroupKey = $this->userData['additional']['user']['customergroup'];
         $view->assign('groupCustomer',$userCustomerGroupKey);
         if ($action=='preferences') {
-            if ($userCustomerGroupKey != 'DE') {
+            if ($userCustomerGroupKey != $groupDataEntry) {
                 try {
                     $controller->redirect(['controller' => 'index']);
                 } catch (\Exception $e) {
