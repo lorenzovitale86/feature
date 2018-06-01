@@ -9,6 +9,10 @@ use TestPlugin\Components\Api\Resource\Bundle;
 use Shopware\Components\Plugin\DBALConfigReader;
 use TestPlugin\Models\Team;
 use TestPlugin\Models\Player;
+use Shopware\Models\Article\Article;
+use Shopware\Models\Article\Detail;
+use Shopware\Models\Category\Category;
+use Shopware\Components\BasketSignature\Basket;
 
 class Frontend implements SubscriberInterface
 {
@@ -37,9 +41,12 @@ class Frontend implements SubscriberInterface
      */
     protected $resource;
 
+    protected $basket;
     protected $teamRepository;
     protected $playerRepository;
-
+    protected $articleRepository;
+    protected $articleDetailRepositoty;
+    protected $categoryRepository;
     /**
      * @param $pluginDirectory
      * @param Container $container
@@ -57,7 +64,10 @@ class Frontend implements SubscriberInterface
         $shopwareModel=Shopware()->Models();
         $this->teamRepository = $shopwareModel->getRepository(Team::class);
         $this->playerRepository = $shopwareModel->getRepository(Player::class);
-
+        $this->articleRepository = Shopware()->Container()->get('models')->getRepository(Article::class);
+        $this->articleDetailRepository = Shopware()->Container()->get('models')->getRepository(Detail::class);
+        $this->categoryRepository = Shopware()->Container()->get('models')->getRepository(Category::class);
+        $this->basket = Shopware()->Modules()->Basket();
     }
 
     /** Returns an instance of the bundle API... */
@@ -77,17 +87,104 @@ class Frontend implements SubscriberInterface
         return [
             'Enlight_Controller_Action_PostDispatchSecure_Frontend' => 'onPostDispatchFrontend',
             'Enlight_Controller_Action_PreDispatch_Frontend_Account'=> 'onPreDispatchAccount',
+            'Enlight_Controller_Action_PreDispatch_Frontend_Detail'=> 'onPreDispatchDetail',
             'Enlight_Controller_Action_PostDispatchSecure_Widgets' => 'addLabelWidgets',
+            'sBasket::sAddArticle::after' => 'afterAddArticleToCart',
+            'sBasket::sDeleteArticle::before' => 'beforeDeleteArticle'
             //  'Theme_Compiler_Collect_Plugin_Javascript' => 'addJsFiles'
         ];
     }
 
+
+    public function onPreDispatchDetail(\Enlight_Event_EventArgs $args)
+    {
+        $controller = $args->getSubject();
+
+        $idArticle = $controller->Request()->sArticle;
+
+        $article = $this->articleRepository->findById($idArticle);
+        $isGadget = $article[0]->getAttribute()->getIsGadget();
+
+        if ($isGadget) {
+            try {
+                    $controller->redirect([
+                    'controller' => 'index',
+                    'action'    => 'index',
+                    ]);
+                } catch (Exception $e) {
+
+            };
+        }
+
+    }
 
     public function onPostDispatchFrontend(\Enlight_Event_EventArgs $args)
     {
         $controller = $args->getSubject();
         $view = $controller->View();
         $view->assign('testUserData', $this->userData);
+    }
+
+    public function afterAddArticleToCart(\Enlight_Hook_HookArgs $args)
+    {
+        /** $id value of the order number in s_order_basket table     */
+        $id = $args->get('id');
+        $det = $this->articleDetailRepository->findByNumber($id);
+        /** @var  $articleTeamId team id of the Article*/
+        $articleTeamId = $det[0]->getArticle()->getAttribute()->getTeam();
+
+        // if the Article has a team id check if is the same of the favorite id of the customer
+        if ($articleTeamId>0) {
+
+            $customerteamid = $this->userData['additional']['user']['team'];
+            if ($articleTeamId === $customerteamid) {
+
+                /* Search in the categories of the articles if there is Gadgets            */
+                //    $articleGadget =  $this->categoryRepository->findByName("Gadgets");
+
+                $articleGadgetNumber = $det[0]->getArticle()->getAttribute()->getGadget();
+
+                /** @var  $gadgetOrderNumber  the ordernumber of the first gadget article*/
+                // $gadgetOrderNumber = $articleGadget[0]->getArticles()[0]->getDetails()[0]->getNumber();
+                $basket = $this->basket->sGetBasket();
+                $gadgetInCart=false;
+                foreach ($basket['content'] as $content) {
+                    if ($articleGadgetNumber == $content['ordernumber']) {
+                        $gadgetInCart = true;
+                        return;
+                    }
+                }
+                if (!$gadgetInCart) {
+                    $this->basket->sAddArticle($articleGadgetNumber, 1);
+                    $this->basket->sRefreshBasket();
+                }
+
+            }
+        }
+
+    }
+
+    public function beforeDeleteArticle(\Enlight_Hook_HookArgs $args)
+    {
+        $basket = $this->basket->sGetBasket();
+        $idOrderArticle = $args->get('id');
+        $gadget = null;
+        foreach ($basket['content'] as $content) {
+            if ($idOrderArticle == $content['id']) {
+                $gadget = $content['additional_details']['gadget'];
+
+          break;
+            }
+        }
+        if ($gadget) {
+            foreach ($basket['content'] as $content) {
+                if ($gadget == $content['ordernumber']) {
+                    $this->basket->sDeleteArticle($content['id']);
+                    $this->basket->sRefreshBasket();
+                    break;
+                }
+            }
+        }
     }
 
     public function onPreDispatchAccount(\Enlight_Controller_ActionEventArgs $args)
