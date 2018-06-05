@@ -6,11 +6,10 @@
 
 {$smarty.block.parent}
 
-
     <form name="preferenceForm" id="preferenceForm" action="{url controller=test action=savePreference}" method="post">
         <div class="panel has--border is--rounded">
             <div class="panel--title is--underline">{s name="preferences"}{/s}</div>
-    {if $gadgetInCart}
+      {if $gadgetInCart<1}
             <div class="panel--body is--wide">
         <div class="profile--salutation field--select select-field">
             <select name="profile[team]" data-quantity-error="true"

@@ -3,6 +3,7 @@ namespace TestPlugin\Subscriber;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Enlight\Event\SubscriberInterface;
+use Enlight_Components_Db_Adapter_Pdo_Mysql;
 use Enlight_Controller_ActionEventArgs;
 use Shopware\Components\DependencyInjection\Container;
 use TestPlugin\Components\Api\Resource\Bundle;
@@ -16,6 +17,14 @@ use Shopware\Components\BasketSignature\Basket;
 
 class Frontend implements SubscriberInterface
 {
+    /**
+     * Database connection which used for each database operation in this class.
+     * Injected over the class constructor
+     *
+     * @var Enlight_Components_Db_Adapter_Pdo_Mysql
+     */
+    protected $db;
+
     /**
      * @var DBALConfigReader
      */
@@ -51,8 +60,9 @@ class Frontend implements SubscriberInterface
      * @param $pluginDirectory
      * @param Container $container
      */
-    public function __construct($pluginDirectory, Container $container)
+    public function __construct($pluginDirectory, Container $container,  Enlight_Components_Db_Adapter_Pdo_Mysql $db = null)
     {
+        $this->db = $db ?: Shopware()->Db();
         $this->pluginDirectory = $pluginDirectory;
         $this->container = $container;
         $this->userData = Shopware()->Modules()->Admin()->sGetUserData();
@@ -88,14 +98,70 @@ class Frontend implements SubscriberInterface
             'Enlight_Controller_Action_PostDispatchSecure_Frontend' => 'onPostDispatchFrontend',
             'Enlight_Controller_Action_PreDispatch_Frontend_Account'=> 'onPreDispatchAccount',
             'Enlight_Controller_Action_PreDispatch_Frontend_Detail'=> 'onPreDispatchDetail',
+            'Enlight_Controller_Action_PreDispatch_Frontend_Checkout'=> 'onPreDispatchCheckoutConfirm',
             'Enlight_Controller_Action_PostDispatchSecure_Widgets' => 'addLabelWidgets',
+         //   'Enlight_Controller_Action_PostDispatchSecure_Frontend_AjaxSearch' => 'onPostDispatchFrontendAjaxSearch',
+          //  'Enlight_Controller_Action_PostDispatchSecure_Frontend_Search' => 'onPostDispatchFrontendSearch',
             'sBasket::sAddArticle::after' => 'afterAddArticleToCart',
-            'sBasket::sDeleteArticle::before' => 'beforeDeleteArticle'
+            'sBasket::sDeleteArticle::before' => 'beforeDeleteArticle',
+    //      'sBasket::sGetAmountArticles::replace' =>'replaceGetAmountArticles',
+    //      'sBasket::sGetAmount::replace' =>'replaceGetAmount',
+            'sBasket::sGetBasket::after' => 'afterGetBasketUpdatePrice'
             //  'Theme_Compiler_Collect_Plugin_Javascript' => 'addJsFiles'
         ];
     }
 
+    public function onPreDispatchCheckoutConfirm(\Enlight_Controller_ActionEventArgs $args)
+    {
+        $controller = $args->getSubject();
+        $action = $controller->Request()->getActionName();
+        $showRemoveGadget=false;
+        if ($action === 'confirm') {
+            $showRemoveGadget = true;
+        }
+        $controller->View()->assign("showRemoveGadget","$showRemoveGadget");
 
+
+    }
+
+   /* public function onPostDispatchFrontendAjaxSearch(\Enlight_Controller_ActionEventArgs $args)
+    {
+     $controller = $args->getSubject();
+
+        $sResults = array($controller->View()->getAssign("sSearchResults"));
+        $sCount = $sResults[0]['sArticlesCount'];
+        foreach ($sResults[0]['sResults'] as $key => $r) {
+            if ($r['is_gadget']==1) {
+                array_splice($sResults[0]['sResults'],$key,1);
+                $sCount--;
+            }
+        }
+        $controller->View()->assign("sSearchResults", [
+                'sResults' => $sResults[0]['sResults'],
+                'sArticlesCount' => $sCount
+        ]);
+
+    }
+
+    public function onPostDispatchFrontendSearch(\Enlight_Controller_ActionEventArgs $args)
+    {
+        $controller = $args->getSubject();
+
+        $sResults = array($controller->View()->getAssign("sSearchResults"));
+        $sCount = $sResults[0]['sArticlesCount'];
+        foreach ($sResults[0]['sArticles'] as $key => $r) {
+            if ($r['is_gadget']==1) {
+                array_splice($sResults[0]['sArticles'],$key,1);
+                $sCount--;
+            }
+        }
+        $controller->View()->assign("sSearchResults", [
+            'sArticles' => $sResults[0]['sArticles'],
+            'sArticlesCount' => $sCount
+        ]);
+
+    }
+*/
     public function onPreDispatchDetail(\Enlight_Event_EventArgs $args)
     {
         $controller = $args->getSubject();
@@ -132,6 +198,26 @@ class Frontend implements SubscriberInterface
         $controller = $args->getSubject();
         $view = $controller->View();
         $view->assign('testUserData', $this->userData);
+    }
+
+    public function afterGetBasketUpdatePrice(\Enlight_Hook_HookArgs $args)
+    {
+        $return = $args->getReturn();
+
+        foreach ($return['content'] as $singleReturn ) {
+            if ($singleReturn['additional_details']['is_gadget'] == 1) {
+                $return['Amount'] =  str_replace(',','.',$return['Amount']) - str_replace(',','.',$singleReturn['price']);
+                $return['AmountNet'] = str_replace(',','.',$return['AmountNet'])  - str_replace(',','.',$singleReturn['netprice']);
+                $return['AmountWithTax'] = str_replace(',','.',$return['AmountWithTax'])  - str_replace(',','.',$singleReturn['netprice']);
+            }
+        }
+
+        $return['AmountNumeric'] = $return['Amount'];
+        $return['AmountNetNumeric'] = $return['AmountNet'];
+        $return['AmountWithTaxNumeric'] = $return['AmountWithTax'];
+
+        $args->setReturn($return);
+       // return $result;
     }
 
     public function afterAddArticleToCart(\Enlight_Hook_HookArgs $args)
@@ -183,13 +269,15 @@ class Frontend implements SubscriberInterface
 
     public function beforeDeleteArticle(\Enlight_Hook_HookArgs $args)
     {
+        $showConfirmRemove = true;
+
         $basket = $this->basket->sGetBasket();
         $idOrderArticle = $args->get('id');
         $gadget = null;
         foreach ($basket['content'] as $content) {
             if ($idOrderArticle == $content['id']) {
                 $gadget = $content['additional_details']['gadget'];
-
+                $showConfirmRemove = true;
           break;
             }
         }
@@ -204,6 +292,33 @@ class Frontend implements SubscriberInterface
         }
     }
 
+  /*  public function replaceGetAmount(\Enlight_Hook_HookArgs $args)
+    {
+        $result = $this->db->fetchRow(
+            'SELECT SUM(ob.quantity*(floor(ob.price * 100 + .55)/100)) AS totalAmount
+                FROM s_order_basket ob ,s_articles_attributes aa  
+                WHERE ob.articleID = aa.articleID AND (aa.is_gadget IS NULL OR aa.is_gadget!= 1) AND ob.sessionID =? GROUP BY ob.sessionID',
+            [Shopware()->Session()->get("sessionId")]
+        );
+
+
+        $args->setReturn($result[0]['totalAmount']);
+        return $result;
+    }
+
+    public function replaceGetAmountArticles(\Enlight_Hook_HookArgs $args)
+    {
+        $result = $this->db->fetchRow(
+            'SELECT SUM(ob.quantity*(floor(ob.price * 100 + .55)/100)) AS totalAmount
+                FROM s_order_basket ob ,s_articles_attributes aa  
+                WHERE ob.articleID = aa.articleID AND (aa.is_gadget IS NULL OR aa.is_gadget!= 1) AND ob.sessionID =? GROUP BY ob.sessionID',
+            [Shopware()->Session()->get("sessionId")]
+        );
+
+        $args->setReturn($result);
+        return $result;
+    }
+*/
     public function onPreDispatchAccount(\Enlight_Controller_ActionEventArgs $args)
     {
         $controller = $args->getSubject();
@@ -254,20 +369,23 @@ class Frontend implements SubscriberInterface
                 $msg = $par['msg'];
                 $view->assign('msg', $msg);
             }
-        }
+            /** CHECK IF A GIFT GADGET IS PRESENT */
 
-        /** CHECK IF A GIFT GADGET IS PRESENT */
+            $basket = $this->basket->sGetBasket();
+            $gadgetInCart=false;
 
-        $basket = $this->basket->sGetBasket();
-        $gadgetInCart=false;
-        foreach ($basket['content'] as $content) {
+            foreach ($basket['content'] as $content) {
 
-            if ($content['additional_details']['is_gadget']) {
-                $gadgetInCart = true;
-                return;
+                if ($content['additional_details']['is_gadget']) {
+                    $gadgetInCart = true;
+                    break;
+                }
+
             }
-
+            $view->assign('gadgetInCart', $gadgetInCart);
         }
+
+
 
         $view->assign('testUserData', $this->userData);
     }

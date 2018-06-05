@@ -22,7 +22,19 @@
 
         <service id="shopware.api.bundle" class="TestPlugin\Components\Api\Resource\Bundle"/>
 
+        <service class="TestPlugin\SearchBundleDBAL\CriteriaRequestHandler" id="test_plugin.search_bundle_dbal.criteria_request_handler">
+            <tag name="criteria_request_handler"/>
+        </service>
 
+        <service class="TestPlugin\SearchBundleDBAL\Condition\GadgetConditionHandler" id="test_plugin.search_bundle_dbal_condition.gadget_condition_handler">
+            <tag name="condition_handler_dbal"/>
+        </service>
+
+        <service class="TestPlugin\SearchBundleDBAL\Facet\GadgetFacetHandler" id="test_plugin.search_bundle_dbal_facet.gadget_facet_handler">
+            <tag name="facet_handler_dbal"/>
+            <argument type="service" id="shopware_searchdbal.dbal_query_builder_factory"/>
+            <argument type="service" id="snippets"/>
+        </service>
 
     </services>
 </container>
