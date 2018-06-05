@@ -1,6 +1,22 @@
-# EX001
+# EX002
 
 ## Work Done
+
+When creating a new article, it's possible to set that's a gadget.
+
+When creating a new article, it's possible to associate a gadget to it.
+
+When a customer add to cart an article that has a team associated like the one he selected as his favorite, if the article has a gadget associated, it will be added once to the cart without price.
+
+When a gadget is in the cart, if the customer remove it, he will be asked to confirm if he want to remove it.
+
+When an article is removed from the cart, if in the cart is present a gadget associated to the article it will be removed.
+
+Removed the gadget articles from the listing, the search results and the details (if is not in the cart)
+
+
+
+### Work Done In EX001
 
 Created two new models:
 
@@ -28,34 +44,19 @@ shows in the carousel and in the list of articles a label with a star icon and d
 of the article.
 
 
-### How To Test
+#### How To Test
 
-To test the plugin:
+Create an article and check gadget field, then try to search it or go to listing page and see if is listed (it should not).
 
-1)    Install the plugin;
+Create an article and assign a gadget to it. Add to cart the article without any matching between article team and favorite customer's team.
+Nothing should happens except the default action of add the article to car.
 
-2)    After the installation, open a listing page and a article detail page;
+Add to cart the article with a gadget assigned and a team that match the favorite customer's team. 
+Now in addition to the article, it will added to the cart 1 and only 1 gadget assigned to the article.
 
-3)    Create a new Customer;
+With the article and his gadget in the cart, add another article of the same kind, and see if another gadget is added (it should not).
 
-4)    Do login with this new Customer, and visit again the page in 2);
+Check if the remove button for the gadgets appear only in the checkout confirm page.
+Remove the gadget and you will be asked to confirm the removing of it (only for the gadget)
 
-5)    In the backend from the detail page of the customer change his customer group to Data Entry (DE),
-      if this group is not present something has gone wrong;
-     
-6)    After updated the customer group, with the same user open an account page, and now should be visible the menu voice Data Entry;
-
-7)    Open Data Entry and try to insert a player or a team without fill all fields.
- 
-8)    Open Data Entry and insert a new team to see if the team will be added
-      
-9)    After added a team, try to insert a player.
-
-10)   With some team and some players added, open the profile page and updates the preferences of the team and player 
-
-11)   After updating the preferences open a listing page and a article detail page, to see if the discount label appear (it should not). 
-
-12)   Create a new article associating a team to it.
-
-13)   Open the listing page and the detail page of this article, to see if the discount label appear. 
-      Try with the article team like the customer's favorite team (it should appear the label), and try with different team (should not appear) 
+Remove the article and the associated gadget should be removed as well. 
